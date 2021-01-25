@@ -62,6 +62,7 @@ def gauss(x, y, c1, c2):
 
 def readCsvWithPandas():
     data = pd.read_csv('example.csv')
+    print(data)
 
 
 
