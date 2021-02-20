@@ -21,8 +21,8 @@ def createPipe():
     y = x + np.random.randn(300) * 200
     z = x ** 2 - y ** 2 + x * y
 
-    ax.scatter3D(x, y, z, c='blue');
-    ax.scatter3D(x, y, -(z + 300000), c='blue');
+    ax.scatter3D(x, y, z, c='red');
+    ax.scatter3D(x, y, -(z + 300000), c='red');
     plt.show()
 
 
@@ -67,4 +67,4 @@ def readCsvWithPandas():
 
 
 if __name__ == '__main__':
-    readCsvWithPandas()
+    createPipe()
