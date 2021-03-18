@@ -1,81 +1,40 @@
-import pandas as pd
 import numpy as np
-import matplotlib.pyplot as plt
-from sklearn.datasets import load_boston
-from sklearn.linear_model import LinearRegression
-from sklearn.preprocessing import PolynomialFeatures
-from sklearn.metrics import r2_score
-
-import numpy as np
-import matplotlib.pyplot as plt
-import csv
-import pandas as pd
-from sklearn.svm import SVR
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
-import numpy as np
-
-x, y, z = [], [], []
+from matplotlib import pyplot as plt
 
 
-def createPipe():
-    np.random.seed(16)
+def ellipse_cloud(x0, y0, rx, ry, npoints, noise, pivot, regular=True):
+    if regular:
+        t = np.linspace(0, 2 * np.pi, npoints)
+    else:
+        t = np.random.uniform(0, 2 * np.pi, npoints)
 
-    fig = plt.figure(figsize=(10, 7))
-    ax = plt.axes(projection='3d');
+    x = rx * np.cos(t) + x0
+    y = ry * np.sin(t) + y0
 
-    x = 2 * np.random.random(300) - 1
-    y = x + np.random.randn(300) * 200
-    z = x ** 2 - y ** 2 + x * y
+    # погрешность вносит смещение координат вдоль прямой, соединяющей центр и точку на окружности
+    pog = np.random.normal(loc=0, scale=noise, size=npoints)
+    h = np.hypot(x, y)
+    pogx = pog * x / h
+    pogy = pog * y / h
 
-    ax.scatter3D(x, y, z, c='red');
-    ax.scatter3D(x, y, -(z + 300000), c='red');
-    plt.show()
+    # поворот оси
+    x_pivot = x * np.cos(pivot) + y * np.sin(pivot)
+    y_pivot = -x * np.sin(pivot) + y * np.cos(pivot)
 
-
-def writeCsv():
-    i = 0
-    fieldnames = ['x', 'y', 'z']
-
-    with open('example.csv', 'w', newline='') as csvfile:
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writeheader()
-
-        dataX = []
-        dataY = []
-        dataZ = []
-
-        for xs in x:
-            dataX.append(xs)
-        for ys in y:
-            dataY.append(ys)
-        for zs in z:
-            dataZ.append(zs)
-
-        while i < len(dataX):
-            writer.writerow({fieldnames[0]: dataX[i], fieldnames[1]: dataY[i], fieldnames[2]: dataZ[i]})
-            i = i + 1
-
-def readCsv():
-    with open('example.csv') as File:
-        reader = csv.reader(File, delimiter=',', quotechar=',',
-                            quoting=csv.QUOTE_MINIMAL)
-        mas = []
-        for row in reader:
-            mas.append(row)
-        mas.pop(0)
-        print(mas)
-
-def gauss(x, y, c1, c2):
-    return np.exp(-1 * ((x - c1) ** 2 + (y - c2) ** 2) / 2)
-
-
-def readCsvWithPandas():
-    data = pd.read_csv('example.csv')
-
-    mas = np.array(data)
-    print(mas)
+    return x_pivot + pogx, y_pivot + pogy
 
 
 if __name__ == '__main__':
-    readCsvWithPandas()
+    x0 = 1
+    y0 = 1
+    rx = 12.5
+    ry = 7
+    pivot = 0.5
+
+    x, y = ellipse_cloud(x0, y0, rx, ry, 77, 0.3, pivot)
+    xe, ye = ellipse_cloud(x0, y0, rx, ry, 500, 0, pivot)
+
+    plt.scatter(x, y)
+    plt.plot(xe, ye, 'y')
+    plt.axis('equal')
+    plt.show()
