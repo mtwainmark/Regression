@@ -2,6 +2,8 @@ import numpy as np
 from matplotlib import pyplot as plt
 import math
 
+from scipy import linalg
+
 
 def ellipse_cloud(x0, y0, rx, ry, npoints, noise, pivot, regular=True):
     if regular:
@@ -74,12 +76,30 @@ def solve(semi_major, semi_minor, p):
     return math.copysign(a * tx, p[0]), math.copysign(b * ty, p[1])
 
 
+# МНК
+def fit_circle(x, y):
+    x0 = np.array([x, y, np.ones(len(x))]).T
+    y0 = x ** 2 + y ** 2
+
+    # метод наименьших квадратов
+    #   x0*c = y0, c' = argmin(||x0*c - y0||^2)
+    #   x0 = [x y 1], b = [x^2+y^2]
+    c = linalg.lstsq(x0, y0)[0]
+
+    xc = c[0] / 2
+    yc = c[1] / 2
+
+    r = np.sqrt(c[2] + xc ** 2 + yc ** 2)
+
+    return xc, yc, r
+
+
 if __name__ == '__main__':
     x0 = 1
     y0 = 1
     rx = 12.5
     ry = 14
-    pivot = 10
+    pivot = 40 / 180 * math.pi
 
     # построение точек
     x, y = ellipse_cloud(x0, y0, rx, ry, 77, 0.3, pivot)
@@ -96,7 +116,16 @@ if __name__ == '__main__':
 
     plt.plot(x_normal_error_out, y_normal_error_out, 'r')
 
+    # построение эллипса, с указанием центра
+    # методом МНК
+    xc, yc, r = fit_circle(x, y)
+    t = np.linspace(0, 2 * np.pi, 77)
+    xx = xc + r * np.cos(t)
+    yy = yc + r * np.sin(t)
+
+    plt.plot(xx, yy, c='g')
+
     plt.scatter(x, y)
-    plt.plot(xe, ye, 'y')
+    plt.plot(xe, ye)
     plt.axis('equal')
     plt.show()
