@@ -44,7 +44,6 @@ def solve(semi_major, semi_minor, p):
     b = semi_minor
 
     for x in range(0, 3):
-        # уравнение эллипса
         x = a * tx
         y = b * ty
 
