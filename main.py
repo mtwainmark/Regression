@@ -1,8 +1,69 @@
 import numpy as np
 from matplotlib import pyplot as plt
-import math
+from sympy import *
 
-from scipy import linalg
+
+def eval_model(alfa, x):
+    ''' вычисление вектора откликов модели
+    '''
+    return alfa[0] * np.exp(-alfa[1] * (x - alfa[2]) ** 2)
+
+
+def jacobian(alfa, x):
+    ''' вычисление матрицы Якоби при заданных значениях alfa, x
+    '''
+    num_points = x.size  # число точек эксперимента
+    num_params = alfa.size  # число параметров модели
+    J = np.zeros((num_points, num_params))
+
+    for i in range(num_points):
+        f = np.exp(-alfa[1] * (x[i] - alfa[2]) ** 2)
+        J[i, 0] = f
+        J[i, 1] = -(x[i] - alfa[2]) ** 2 * alfa[0] * f
+        J[i, 2] = 2 * alfa[1] * (x[i] - alfa[2]) * alfa[0] * f
+    return J
+
+
+def gaussnewton(x, y, alfa, max_iter, stop_norm=1e-10, lam=0):
+    ''' оптимизация параметров модели от начального приближения методом Гаусса-Ньютона
+    '''
+
+    error_fn = []
+
+    for i in range(max_iter):
+        # вычисление вектора откликов
+        r = eval_model(alfa, x) - y
+
+        J = jacobian(alfa, x)
+
+        # подстройка параметров модели
+        jtj = np.matmul(np.transpose(J), J)
+
+        alfa_new = alfa - np.matmul(
+            np.matmul(
+                np.linalg.pinv(jtj + lam * np.diag(np.diag(jtj))),
+                np.transpose(J)),
+            r)
+
+        # норма изменения вектора параметров
+        change = np.linalg.norm(alfa_new - alfa) / np.linalg.norm(alfa)
+
+        # норма вектора остатков
+        error_fn.append(np.linalg.norm(r))
+
+        print(i, alfa_new, change)
+
+        if change < stop_norm:
+            break
+
+        alfa = alfa_new
+
+    if error_fn[-1] < error_fn[0]:
+        print('Поиск завершился удачно, ошибка={}'.format(error_fn[-1]))
+    else:
+        print('Поиск завершился неудачно')
+
+    return alfa, error_fn
 
 
 def ellipse_cloud(x0, y0, rx, ry, npoints, noise, pivot, regular=True):
@@ -28,7 +89,7 @@ def ellipse_cloud(x0, y0, rx, ry, npoints, noise, pivot, regular=True):
 
 
 # https://wet-robots.ghost.io/simple-method-for-distance-to-ellipse/
-def solve(semi_major, semi_minor, p):
+def calculate_normal_error_point(semi_major, semi_minor, p):
     # координаты точек по модулю
     px = abs(p[0])
     py = abs(p[1])
@@ -71,26 +132,17 @@ def solve(semi_major, semi_minor, p):
 
         tx /= t
         ty /= t
+
     # copysign - возвращает значение первого аргумента и знак второго аргумента
     return math.copysign(a * tx, p[0]), math.copysign(b * ty, p[1])
 
 
-# МНК
-def fit_circle(x, y):
-    x0 = np.array([x, y, np.ones(len(x))]).T
-    y0 = x ** 2 + y ** 2
-
-    # метод наименьших квадратов
-    #   x0*c = y0, c' = argmin(||x0*c - y0||^2)
-    #   x0 = [x y 1], b = [x^2+y^2]
-    c = linalg.lstsq(x0, y0)[0]
-
-    xc = c[0] / 2
-    yc = c[1] / 2
-
-    r = np.sqrt(c[2] + xc ** 2 + yc ** 2)
-
-    return xc, yc, r
+# https://all-python.ru/raznoe/proizvodnaya.html
+# вычисление частной производной
+# для вычисления используем SymPy
+def calculate_partial_derivative():
+    x, y = symbols('x y')
+    print(diff(sin(x) + 0.5 * y, y))
 
 
 if __name__ == '__main__':
@@ -109,20 +161,12 @@ if __name__ == '__main__':
 
     for i in range(len(x)):
         # Вычисление ошибки для каждой точки
-        x_normal_error, y_normal_error = solve(x0, y0, [x[i], y[i]])
+        x_normal_error, y_normal_error = calculate_normal_error_point(x0, y0, [x[i], y[i]])
+
         x_normal_error_out.append(x[i] + x_normal_error)
         y_normal_error_out.append(y[i] + y_normal_error)
 
     plt.plot(x_normal_error_out, y_normal_error_out, 'r')
-
-    # построение эллипса, с указанием центра
-    # методом МНК
-    xc, yc, r = fit_circle(x, y)
-    t = np.linspace(0, 2 * np.pi, 77)
-    xx = xc + r * np.cos(t)
-    yy = yc + r * np.sin(t)
-
-    plt.plot(xx, yy, c='g')
 
     plt.scatter(x, y)
     plt.plot(xe, ye)
