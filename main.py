@@ -1,13 +1,15 @@
 import numpy as np
 from matplotlib import pyplot as plt
 from sympy import *
-
+import math
 
 def eval_model(alfa, x):
     ''' вычисление вектора откликов модели
     '''
     return alfa[0] * np.exp(-alfa[1] * (x - alfa[2]) ** 2)
 
+def func(x, a, b, c):
+    return a * np.exp(-b * x) + c
 
 def jacobian(alfa, x):
     ''' вычисление матрицы Якоби при заданных значениях alfa, x
@@ -140,22 +142,22 @@ def calculate_normal_error_point(semi_major, semi_minor, p):
 # https://all-python.ru/raznoe/proizvodnaya.html
 # вычисление частной производной
 # для вычисления используем SymPy
-def calculate_partial_derivative():
-    x, y = symbols('x y')
-    print(diff(sin(x) + 0.5 * y, y))
+def calculate_partial_derivative_A(x, y):
+    a, b = symbols('a b')
+    return diff(((x ** 2 / a ** 2) + (y ** 2 / b ** 2)), a)
 
 
 if __name__ == '__main__':
     x0 = 1
     y0 = 1
-    rx = 12.5
-    ry = 14
-    pivot = 40 / 180 * math.pi
+    rx = 10
+    ry = 10
+    pivot = 0
 
     # построение точек
-    x, y = ellipse_cloud(x0, y0, rx, ry, 77, 0.3, pivot)
+    x, y = ellipse_cloud(x0, y0, rx, ry, 50, 0.2, pivot)
     # построение эллипса
-    xe, ye = ellipse_cloud(x0, y0, rx, ry, 77, 0, pivot)
+    xe, ye = ellipse_cloud(x0, y0, rx, ry, 50, 0, pivot)
 
     x_normal_error_out, y_normal_error_out = [], []
 
@@ -163,12 +165,17 @@ if __name__ == '__main__':
         # Вычисление ошибки для каждой точки
         x_normal_error, y_normal_error = calculate_normal_error_point(x0, y0, [x[i], y[i]])
 
-        x_normal_error_out.append(x[i] + x_normal_error)
-        y_normal_error_out.append(y[i] + y_normal_error)
+        x_normal_error_out.append(x[i])
+        y_normal_error_out.append(y[i])
 
-    plt.plot(x_normal_error_out, y_normal_error_out, 'r')
+    v, b = gaussnewton(np.array(x), np.array(y), np.array([x0, y0, rx, ry]), 50)
+    print('alfa', v)
+    print('error', b)
+
+    xData, yData = ellipse_cloud(v[0], v[1], v[2], v[3], 50, 0, pivot)
 
     plt.scatter(x, y)
     plt.plot(xe, ye)
+    plt.plot(xData, yData)
     plt.axis('equal')
     plt.show()
