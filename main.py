@@ -148,34 +148,35 @@ def calculate_partial_derivative_A(x, y):
 
 
 if __name__ == '__main__':
-    x0 = 1
-    y0 = 1
-    rx = 10
-    ry = 10
+    x0 = 1.5
+    y0 = -2
+    rx = 7
+    ry = 12
     pivot = 0
+    points = 50
 
     # построение точек
-    x, y = ellipse_cloud(x0, y0, rx, ry, 50, 0.2, pivot)
+    x, y = ellipse_cloud(x0, y0, rx, ry, points, 0.3, pivot)
     # построение эллипса
-    xe, ye = ellipse_cloud(x0, y0, rx, ry, 50, 0, pivot)
+    xe, ye = ellipse_cloud(x0, y0, rx, ry, points, 0, pivot)
 
     x_normal_error_out, y_normal_error_out = [], []
 
     for i in range(len(x)):
         # Вычисление ошибки для каждой точки
-        x_normal_error, y_normal_error = calculate_normal_error_point(x0, y0, [x[i], y[i]])
+        #x_normal_error, y_normal_error = calculate_normal_error_point(x0, y0, [x[i], y[i]])
 
         x_normal_error_out.append(x[i])
         y_normal_error_out.append(y[i])
 
-    v, b = gaussnewton(np.array(x), np.array(y), np.array([x0, y0, rx, ry]), 50)
+    v, b = gaussnewton(np.array(x), np.array(y), np.array([x0, y0, rx, ry]), points)
     print('alfa', v)
     print('error', b)
 
-    xData, yData = ellipse_cloud(v[0], v[1], v[2], v[3], 50, 0, pivot)
+    xData, yData = ellipse_cloud(v[0], v[1], v[2], v[3], points, 0, pivot)
 
     plt.scatter(x, y)
-    plt.plot(xe, ye)
+    #plt.plot(xe, ye)
     plt.plot(xData, yData)
     plt.axis('equal')
     plt.show()
