@@ -151,7 +151,7 @@ if __name__ == '__main__':
     x0 = 1.5
     y0 = -2
     rx = 7
-    ry = 12
+    ry = 10
     pivot = 0
     points = 50
 
