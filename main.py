@@ -3,13 +3,16 @@ from matplotlib import pyplot as plt
 from sympy import *
 import math
 
+
 def eval_model(alfa, x):
     ''' вычисление вектора откликов модели
     '''
     return alfa[0] * np.exp(-alfa[1] * (x - alfa[2]) ** 2)
 
+
 def func(x, a, b, c):
     return a * np.exp(-b * x) + c
+
 
 def jacobian(alfa, x):
     ''' вычисление матрицы Якоби при заданных значениях alfa, x
@@ -147,36 +150,71 @@ def calculate_partial_derivative_A(x, y):
     return diff(((x ** 2 / a ** 2) + (y ** 2 / b ** 2)), a)
 
 
+def calculate_distance(x0, y0, rx, ry, point):
+    dx = point[0] - x0
+    dy = point[1] - y0
+
+    k = dy / dx
+    w = (1 / rx ** 2) + (k ** 2 / ry ** 2)
+    w = 1 / w
+
+    a = 1
+    b = -2 * x0
+    c = x0 ** 2 - w
+
+    d = b ** 2 - 4 * a * c
+
+    d = math.sqrt(d)
+
+    x = (-b + d) / (2 * a)
+    x1 = (-b - d) / (2 * a)
+
+    y = (x - x0) * (dy / dx) + y0
+    y1 = (x1 - x0) * (dy / dx) + y0
+
+    a = abs(point[0] - x)
+    b = abs(point[0] - x1)
+
+    if a < b:
+        return [x, y]
+    else:
+        return [x1, y1]
+
+
+def calculate_error(point, point_ellipse):
+    return math.sqrt((point[0] - point_ellipse[0])**2 + (point[1] - point_ellipse[1])**2)
+
+
 if __name__ == '__main__':
-    x0 = 1.5
-    y0 = -2
-    rx = 7
-    ry = 10
+    x0 = 1
+    y0 = 2
+    rx = 3
+    ry = 6
     pivot = 0
     points = 50
 
     # построение точек
-    x, y = ellipse_cloud(x0, y0, rx, ry, points, 0.3, pivot)
+    x, y = ellipse_cloud(x0, y0, rx, ry, points, 0.1, pivot)
     # построение эллипса
     xe, ye = ellipse_cloud(x0, y0, rx, ry, points, 0, pivot)
 
     x_normal_error_out, y_normal_error_out = [], []
 
     for i in range(len(x)):
-        # Вычисление ошибки для каждой точки
-        #x_normal_error, y_normal_error = calculate_normal_error_point(x0, y0, [x[i], y[i]])
+        # Вычисление ошибки для каждой точки с помощью центров эллипса
+        x_normal_error, y_normal_error = calculate_normal_error_point(x0, y0, [x[i], y[i]])
+        # Вычисление ошибки с помощью канонического уравнения эллипса
+        normal_point_x, normal_point_y = calculate_distance(x0, y0, rx, ry, [x[i], y[i]])
+        # Расчет расстояния от точки до эллипса
+        print(calculate_error([x[i], y[i]], calculate_distance(x0, y0, rx, ry, [x[i], y[i]])))
 
-        x_normal_error_out.append(x[i])
-        y_normal_error_out.append(y[i])
-
-    v, b = gaussnewton(np.array(x), np.array(y), np.array([x0, y0, rx, ry]), points)
-    print('alfa', v)
-    print('error', b)
-
-    xData, yData = ellipse_cloud(v[0], v[1], v[2], v[3], points, 0, pivot)
+        x_normal_error_out.append(normal_point_x)
+        y_normal_error_out.append(normal_point_y)
 
     plt.scatter(x, y)
-    #plt.plot(xe, ye)
-    plt.plot(xData, yData)
+
+    plt.plot(x_normal_error_out, y_normal_error_out, color='r')
+
+    # plt.plot(xe, ye)
     plt.axis('equal')
     plt.show()
