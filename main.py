@@ -185,6 +185,15 @@ def calculate_distance(x0, y0, rx, ry, point):
 def calculate_error(point, point_ellipse):
     return math.sqrt((point[0] - point_ellipse[0]) ** 2 + (point[1] - point_ellipse[1]) ** 2)
 
+def view_3d():
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+
+    ax.scatter(x, y, label='points')
+    ax.scatter(x_normal_error_out, y_normal_error_out, color='g', label='distance')
+    ax.scatter(xe, ye, label='ideal_ellipse')
+    # ax.axis('equal')
+    ax.legend()
 
 if __name__ == '__main__':
     x0 = 1.5
@@ -219,11 +228,11 @@ if __name__ == '__main__':
     popt, pcov = gaussnewton(np.array(x_normal_error_out), np.array(y_normal_error_out), np.array([x0, y0, rx, ry]), 5)
 
     z, z1 = ellipse_cloud(popt[0], popt[1], popt[2], popt[3], points, 0, pivot)
-    plt.scatter(z, z1, color='r', label='gauss-newton')
+    #plt.scatter(z, z1, color='r', label='gauss-newton')
 
-    plt.scatter(x, y, label='points')
+    plt.scatter(x, y,  label='points')
     plt.scatter(x_normal_error_out, y_normal_error_out, color='g', label='distance')
     plt.scatter(xe, ye, label='ideal_ellipse')
-    plt.axis('equal')
     plt.legend()
+    view_3d()
     plt.show()
