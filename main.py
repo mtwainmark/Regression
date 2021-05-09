@@ -218,7 +218,7 @@ if __name__ == '__main__':
 
     popt, pcov = gaussnewton(np.array(x_normal_error_out), np.array(y_normal_error_out), np.array([x0, y0, rx, ry]), 5)
 
-    z, z1 = ellipse_cloud(popt[0], popt[1], popt[2], popt[3], points, 0.1, pivot)
+    z, z1 = ellipse_cloud(popt[0], popt[1], popt[2], popt[3], points, 0, pivot)
     plt.scatter(z, z1, color='r', label='gauss-newton')
 
     plt.scatter(x, y, label='points')
