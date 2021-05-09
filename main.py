@@ -1,7 +1,9 @@
 import numpy as np
 from matplotlib import pyplot as plt
+from scipy.optimize import curve_fit
 from sympy import *
 import math
+import scipy
 
 
 def eval_model(alfa, x):
@@ -12,7 +14,6 @@ def eval_model(alfa, x):
 
 def func(x, a, b, c):
     return a * np.exp(-b * x) + c
-
 
 def jacobian(alfa, x):
     ''' вычисление матрицы Якоби при заданных значениях alfa, x
@@ -182,19 +183,19 @@ def calculate_distance(x0, y0, rx, ry, point):
 
 
 def calculate_error(point, point_ellipse):
-    return math.sqrt((point[0] - point_ellipse[0])**2 + (point[1] - point_ellipse[1])**2)
+    return math.sqrt((point[0] - point_ellipse[0]) ** 2 + (point[1] - point_ellipse[1]) ** 2)
 
 
 if __name__ == '__main__':
-    x0 = 1
-    y0 = 2
-    rx = 3
-    ry = 6
+    x0 = 1.5
+    y0 = -2
+    rx = 7
+    ry = 10
     pivot = 0
     points = 50
 
     # построение точек
-    x, y = ellipse_cloud(x0, y0, rx, ry, points, 0.1, pivot)
+    x, y = ellipse_cloud(x0, y0, rx, ry, points, 0.2, pivot)
     # построение эллипса
     xe, ye = ellipse_cloud(x0, y0, rx, ry, points, 0, pivot)
 
@@ -202,19 +203,27 @@ if __name__ == '__main__':
 
     for i in range(len(x)):
         # Вычисление ошибки для каждой точки с помощью центров эллипса
-        x_normal_error, y_normal_error = calculate_normal_error_point(x0, y0, [x[i], y[i]])
+        #x_normal_error, y_normal_error = calculate_normal_error_point(x0, y0, [x[i], y[i]])
         # Вычисление ошибки с помощью канонического уравнения эллипса
         normal_point_x, normal_point_y = calculate_distance(x0, y0, rx, ry, [x[i], y[i]])
+
+        #popt, pcov = curve_fit(func, normal_point_x, normal_point_y)
+        #print('popt', popt)
+
         # Расчет расстояния от точки до эллипса
-        print(calculate_error([x[i], y[i]], calculate_distance(x0, y0, rx, ry, [x[i], y[i]])))
+        #print(calculate_error([x[i], y[i]], calculate_distance(x0, y0, rx, ry, [x[i], y[i]])))
 
         x_normal_error_out.append(normal_point_x)
         y_normal_error_out.append(normal_point_y)
 
-    plt.scatter(x, y)
+    popt, pcov = gaussnewton(np.array(x_normal_error_out), np.array(y_normal_error_out), np.array([x0, y0, rx, ry]), 5)
 
-    plt.plot(x_normal_error_out, y_normal_error_out, color='r')
+    z, z1 = ellipse_cloud(popt[0], popt[1], popt[2], popt[3], points, 0.1, pivot)
+    plt.scatter(z, z1, color='r', label='gauss-newton')
 
-    # plt.plot(xe, ye)
+    plt.scatter(x, y, label='points')
+    plt.scatter(x_normal_error_out, y_normal_error_out, color='g', label='distance')
+    plt.scatter(xe, ye, label='ideal_ellipse')
     plt.axis('equal')
+    plt.legend()
     plt.show()
