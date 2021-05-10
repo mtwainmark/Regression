@@ -3,7 +3,6 @@ from matplotlib import pyplot as plt
 from scipy.optimize import curve_fit
 from sympy import *
 import math
-import scipy
 
 
 def eval_model(alfa, x):
@@ -11,9 +10,6 @@ def eval_model(alfa, x):
     '''
     return alfa[0] * np.exp(-alfa[1] * (x - alfa[2]) ** 2)
 
-
-def func(x, a, b, c):
-    return a * np.exp(-b * x) + c
 
 def jacobian(alfa, x):
     ''' вычисление матрицы Якоби при заданных значениях alfa, x
@@ -150,7 +146,7 @@ def calculate_partial_derivative_A(x, y):
     a, b = symbols('a b')
     return diff(((x ** 2 / a ** 2) + (y ** 2 / b ** 2)), a)
 
-
+# https://ip76.ru/theory-and-practice/inellipse-line/
 def calculate_distance(x0, y0, rx, ry, point):
     dx = point[0] - x0
     dy = point[1] - y0
@@ -192,8 +188,13 @@ def view_3d():
     ax.scatter(x, y, label='points')
     ax.scatter(x_normal_error_out, y_normal_error_out, color='g', label='distance')
     ax.scatter(xe, ye, label='ideal_ellipse')
-    # ax.axis('equal')
     ax.legend()
+
+# https://stackoverflow.com/questions/59042588/multivariate-curve-fitting-in-python-for-estimating-the-parameter-and-order-of-e
+def func(data, a, b, h, k, A):
+    x, y = data
+    return ((((x - h) * np.cos(A) + (y - k) * np.sin(A)) / a) ** 2
+            + (((x - h) * np.sin(A) - (y - k) * np.cos(A)) / b) ** 2)
 
 if __name__ == '__main__':
     x0 = 1.5
@@ -228,11 +229,20 @@ if __name__ == '__main__':
     popt, pcov = gaussnewton(np.array(x_normal_error_out), np.array(y_normal_error_out), np.array([x0, y0, rx, ry]), 5)
 
     z, z1 = ellipse_cloud(popt[0], popt[1], popt[2], popt[3], points, 0, pivot)
-    #plt.scatter(z, z1, color='r', label='gauss-newton')
+    plt.scatter(z, z1, color='r', label='gauss-newton')
+
+    pp, pcov1 = curve_fit(func, (x_normal_error_out, y_normal_error_out), np.ones(points), method='lm')
+
+    print('pp', pp)
+
+    curve_fit_x, curve_fit_y = ellipse_cloud(pp[2], pp[3], pp[0], pp[1], points, 0, pivot)
+
 
     plt.scatter(x, y,  label='points')
     plt.scatter(x_normal_error_out, y_normal_error_out, color='g', label='distance')
     plt.scatter(xe, ye, label='ideal_ellipse')
+    plt.plot(curve_fit_x, curve_fit_y, color='pink', label='curve_fit')
+
     plt.legend()
     view_3d()
     plt.show()
